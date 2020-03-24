@@ -1,7 +1,4 @@
 //separate file for functions?
-//console.table-do i need a require for this? it's from npm, right?
-
-
 
 var mysql = require("mysql");
 var inquirer = require("inquirer");
@@ -111,10 +108,12 @@ function newDepartment() {
 }
 
 function newRole() {
-    connection.query("SELECT department.name, department.id FROM department", function(err, res) {
-        //turn into array; use a key value array so that choices displays dept name, but key could represent the dept id. map function works well here.
+    connection.query("SELECT department.id, department.name FROM department", 
+    function(err, res) {
+        //turn into array; use a key value array so that choices displays dept name, but key could 
+        //represent the dept id. map function works well here.
         //mapping key value, name and value of what you want displayed
-        var deptChoices = res.map(({name, id}) => ({name:name, value:id}))
+        var deptChoices = res.map(({id, name}) => ({value:id, name:name}))
     inquirer
       .prompt([
         {
@@ -152,41 +151,53 @@ function newRole() {
     })
     
 }
+//var fullName = "employee.first_name, employee.last_name"
+//"SELECT * FROM employee WHERE role.id = employee.role_id",
 function newEmployee() {
-    inquirer.prompt({
-        name: "firstName",
-        type: "input",
-        message: "What is the first name of the employee you're adding?"
-    },
-    {
-        name: "lastName",
-        type: "input",
-        message: "What is the last name of the employee you're adding"
-    },
-    {
-        name: "roleId",
-        type: "input",
-        message: "What is the role id for the employee you're adding?"
-    },
-    {
-        name: "managerId",
-        type: "input",
-        message: "What is the manager id for the employee you're adding?"
-    })   
-    .then(function(answer) {
-        var query = "SELECT id, first_name, last_name, role_id, manager_id FROM employee";
-        connection.query("INSERT INTO department SET ?",
-        {
-            first_name: answer.firstName,
-            last_name: answer.lastName,
-            role_id: answer.roleId,
-            manager_id: answer.managerId
-        },
-        function(err) {
-            if (err) throw err;
-            console.log("You created a new employee")
-            hr();
-        })
-    })
+    connection.query("SELECT role.id, role.title FROM role", 
+    function(err, res) {
+        var roleChoices = res.map(({id, title}) => ({value:id, name:title}))
+        // var managerChoices = res.map(({id, manager_id})=>({value:id, name:managr_id}))
+    inquirer
+        .prompt([
+          {
+            name: "firstName",
+            type: "input",
+            message: "What is the first name of the employee you're adding?"
+          },
+          {
+            name: "lastName",
+            type: "input",
+            message: "What is the last name of the employee you're adding"
+          },
+          {
+            name: "roleId",
+            type: "list",
+            message: "What is the role for the employee you're adding?",
+            choices: roleChoices
+          }
+        ])
+        // {
+        //     name: "managerId",
+        //     type: "list",
+        //     message: "What is the manager id for the employee you're adding?"
+        // })
+        .then(function(answer) {
+          connection.query(
+            "INSERT INTO employee SET ?",
+            {
+              first_name: answer.firstName,
+              last_name: answer.lastName,
+              role_id: answer.roleId
+              // manager_id: answer.managerId
+            },
+            function(err) {
+              if (err) throw err;
+              console.log("You created a new employee");
+              hr();
+            }
+          );
+        });
+    });
 }
 
