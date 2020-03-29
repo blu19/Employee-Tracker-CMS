@@ -1,8 +1,7 @@
 //separate file for functions?
-
 var mysql = require("mysql");
 var inquirer = require("inquirer");
-require("console.table") ;
+require("console.table");
 
 var connection = mysql.createConnection({
     host: "localhost",
@@ -22,42 +21,46 @@ function hr() {
       type: "rawlist",
       message: "What do you want to do?",
       choices: [
-        "Add a new department",
-        "Add a new role",
-        "Add a new employee",
-        "View a new department",
-        "View a new role",
-        "View a new employee",
-        //"View employees by manager"
+        "Add department",
+        "Add role",
+        "Add employee",
+        "View all departments",
+        "View all roles",
+        "View all employees",
+        //"View employee by department",
+        //"View employees by manager",
         "Update employee roles",
-        //"Update employee managers"
-        //"Delete a department"
-        //"Delete a role"
-        //"Delete an employee"
-        //"View the total utilized department budget"        
+        //"Update employee managers",
+        //"Delete department",
+        //"Delete role",
+        //"Delete employee",
+        //"View total utilized department budget",        
         "Done, nothing more to do"
       ]
     })
     .then(function(answer) {
         switch (answer.choice) {
-            case "Add a new department":
+            case "Add department":
                 newDepartment();
                 break;
-            case "Add a new role":
+            case "Add role":
                 newRole();
                 break;
-            case "Add a new employee":
+            case "Add employee":
                 newEmployee();
                 break;
-            case "View a new department":
-                viewDept();
+            case "View all departments":
+                viewDepartments();
                 break;
-            case "View a new role":
-                viewNewRole();
+            case "View all roles":
+                viewRoles();
                 break;
-            case "View a new employee":
-                viewNewEmployee();
+            case "View all employees":
+                viewEmployees();
                 break;
+            //case "View employees by department":
+            //  viewEmployeesByDepartment();
+            //  break;
             //case "View employees by manager":
             //  viewEmployeeByManager();
             //  break;
@@ -67,16 +70,16 @@ function hr() {
             //case "Update employee managers":
             //  updateEmployeeManager();
             //  break;
-            //case "Delete a department":
+            //case "Delete department":
             //  deleteDepartment();
             //  break;
-            //case "Delete a role":
+            //case "Delete role":
             //  deleteRole();
             //  break;
-            //case "Delete an employee":
+            //case "Delete employee":
             //  deleteEmployee();
             //  break;
-            //case "View the total utilized department budget":
+            //case "View total utilized department budget":
             //  departmentBudget();
             //  break;
             case "Done, nothing more to do":
@@ -93,8 +96,6 @@ function newDepartment() {
         message: "What is the name of the department would you like to add?"
     })   
     .then(function(answer) {
-        //no need for user to view this
-        //var query = "SELECT name FROM department";
         connection.query("INSERT INTO department SET ?",
         {
             name: answer.newDept
@@ -149,16 +150,16 @@ function newRole() {
         );
       });
     })
-    
 }
-//var fullName = "employee.first_name, employee.last_name"
-//"SELECT * FROM employee WHERE role.id = employee.role_id",
+//foreign key needed?
 function newEmployee() {
     connection.query("SELECT role.id, role.title FROM role", 
     function(err, res) {
         var roleChoices = res.map(({id, title}) => ({value:id, name:title}))
-        // var managerChoices = res.map(({id, manager_id})=>({value:id, name:managr_id}))
-    inquirer
+    connection.query("SELECT first_name, last_name, employee.id FROM employee LEFT JOIN role ON employee.role_id = role.id WHERE role.title = 'Manager'",
+    function(err, res) {
+        var managerList = res.map(({first_name, last_name, id}) => ({value:id, name:`${first_name} ${last_name}`}))
+        inquirer
         .prompt([
           {
             name: "firstName",
@@ -175,21 +176,22 @@ function newEmployee() {
             type: "list",
             message: "What is the role for the employee you're adding?",
             choices: roleChoices
+          },
+          {
+            name: "managerId",
+            type: "list",
+            message: "What is the manager id for the employee you're adding?",
+            choices: managerList 
           }
         ])
-        // {
-        //     name: "managerId",
-        //     type: "list",
-        //     message: "What is the manager id for the employee you're adding?"
-        // })
         .then(function(answer) {
           connection.query(
             "INSERT INTO employee SET ?",
             {
               first_name: answer.firstName,
               last_name: answer.lastName,
-              role_id: answer.roleId
-              // manager_id: answer.managerId
+              role_id: answer.roleId,
+              manager_id: answer.managerId
             },
             function(err) {
               if (err) throw err;
@@ -199,5 +201,134 @@ function newEmployee() {
           );
         });
     });
+})}   
+
+function viewDepartments() {
+    connection.query("SELECT department.name FROM department", 
+    function (err, res) {
+        if (err) throw err;
+        console.log("/n");
+        console.table(res)
+        hr();
+    });
+}
+//fields
+function viewRoles() {
+    connection.query("SELECT role.title FROM role",
+    function (err, res) {
+        if (err) throw err;
+        console.log("/n");
+        console.table(res)
+        hr();
+    });
 }
 
+function viewEmployees() {
+    connection.query(
+      "SELECT employee.first_name, last_name, employee.id FROM employee",
+    function(err, res) {
+        // var employeeList = res.map(({first_name, last_name, id}) => ({value:id, name:`${first_name} ${last_name}`}))
+        if (err) throw err;
+        console.log("/n");
+        console.table(res)
+        hr();
+    });
+}
+
+// // function viewEmployeesByDepartment() {
+
+// // }
+// // function viewEmployeeByManager() {
+
+// // }
+
+// function updateEmployeeRoles() {
+//     connection.query("SELECT employee.role_id, employee.first_name, employee.last_name FROM employee", 
+//     function(err, res) {
+//       var empChoices = res.map(({ id, name }) => ({ value: id, name: name }));
+//     connection.query("SELECT role.role_id, role.title FROM role", 
+//     function(err, res) {
+//       var roleChoices = res.map(({id, title}) => ({ value: id, name: title }));
+//     })
+//       inquirer
+//         .prompt([
+//           {
+//             name: "whichEmp",
+//             type: "input",
+//             message: "Which employee would you like to adjust the role for?",
+//             choices: empChoices
+//           },
+//           {
+//             name: "updatedEmpRole",
+//             type: "input",
+//             message: "What is their updated role?",
+//             choices: roleChoices
+//           }
+//         ])
+//         .then(function(answer) {
+//           connection.query(
+//             "UPDATE employee SET ? WHERE ?",
+//             {
+//               name: answer.whichEmp
+//             },
+//             {
+//               title: answer.updatedEmpRole
+//             },
+//             function(err) {
+//               if (err) throw err;
+//               console.log("You updated their role");
+//               hr();
+//             }
+//           );
+//         });
+//     });
+// }
+
+function updateEmployeeRoles() {
+  inquirer.prompt([
+    {
+      name: "whichEmp",
+      type: "input",
+      message: "Please enter the employee's id to update their role:"
+    },
+    {
+      name: "roleChoice",
+      type: "input",
+      message: "What is the id of their new role?"
+    }
+  ])
+  .then(function(answer) {
+    connection.query("UPDATE employee SET ? WHERE ?", 
+    [{
+      role_id: answer.roleChoice
+    },
+    {
+      id: answer.whichEmp
+    }],
+    function (err) {
+      if (err) throw err;
+      console.log("Their role has been updated")
+      hr();
+    })
+ })
+}
+
+// // function updateEmployeeManager() {
+
+// // }
+
+// // function deleteDepartment() {
+
+// // }
+
+// // function deleteRole() {
+
+// // }
+
+// // function deleteEmployee() {
+
+// // }
+
+// // function departmentBudget() {
+
+// // }
