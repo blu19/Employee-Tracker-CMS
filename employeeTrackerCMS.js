@@ -242,76 +242,75 @@ function viewEmployees() {
 
 // // }
 
-// function updateEmployeeRoles() {
-//     connection.query("SELECT employee.role_id, employee.first_name, employee.last_name FROM employee", 
-//     function(err, res) {
-//       var empChoices = res.map(({ id, name }) => ({ value: id, name: name }));
-//     connection.query("SELECT role.role_id, role.title FROM role", 
-//     function(err, res) {
-//       var roleChoices = res.map(({id, title}) => ({ value: id, name: title }));
-//     })
-//       inquirer
-//         .prompt([
-//           {
-//             name: "whichEmp",
-//             type: "input",
-//             message: "Which employee would you like to adjust the role for?",
-//             choices: empChoices
-//           },
-//           {
-//             name: "updatedEmpRole",
-//             type: "input",
-//             message: "What is their updated role?",
-//             choices: roleChoices
-//           }
-//         ])
-//         .then(function(answer) {
-//           connection.query(
-//             "UPDATE employee SET ? WHERE ?",
-//             {
-//               name: answer.whichEmp
-//             },
-//             {
-//               title: answer.updatedEmpRole
-//             },
-//             function(err) {
-//               if (err) throw err;
-//               console.log("You updated their role");
-//               hr();
-//             }
-//           );
-//         });
-//     });
-// }
-
 function updateEmployeeRoles() {
-  inquirer.prompt([
-    {
-      name: "whichEmp",
-      type: "input",
-      message: "Please enter the employee's id to update their role:"
-    },
-    {
-      name: "roleChoice",
-      type: "input",
-      message: "What is the id of their new role?"
-    }
-  ])
-  .then(function(answer) {
-    connection.query("UPDATE employee SET ? WHERE ?", 
-    [{
-      role_id: answer.roleChoice
-    },
-    {
-      id: answer.whichEmp
-    }],
-    function (err) {
-      if (err) throw err;
-      console.log("Their role has been updated")
-      hr();
-    })
- })
+    connection.query("SELECT employee.id, employee.first_name, employee.last_name FROM employee", 
+    function(err, res) {
+      var empChoices = res.map(({ id, first_name, last_name }) => ({ value: id, name: `${first_name} ${last_name}` }));
+    connection.query("SELECT id, title FROM role", 
+    function(err, results) {
+      var roleChoices = results.map(({ id, title }) => ({
+        value: id,
+        name: title
+      }));
+      inquirer
+        .prompt([
+          {
+            name: "whichEmp",
+            type: "list",
+            message: "Which employee would you like to adjust the role for?",
+            choices: empChoices
+          },
+          {
+            name: "updatedEmpRole",
+            type: "list",
+            message: "What is their updated role?",
+            choices: roleChoices
+          }
+        ])
+        .then(function(answer) {
+          console.log(answer.whichEmp, answer.updatedEmpRole)
+          connection.query(
+            "UPDATE employee SET role_id = ? WHERE id = ?",
+            [answer.updatedEmpRole, answer.whichEmp],
+            function(err) {
+              if (err) throw err;
+              console.log("You updated their role");
+              hr();
+            }
+          );
+        });
+    });
+    });
 }
+
+// function updateEmployeeRoles() {
+//   inquirer.prompt([
+//     {
+//       name: "whichEmp",
+//       type: "input",
+//       message: "Please enter the employee's id to update their role:"
+//     },
+//     {
+//       name: "roleChoice",
+//       type: "input",
+//       message: "What is the id of their new role?"
+//     }
+//   ])
+//   .then(function(answer) {
+//     connection.query("UPDATE employee SET ? WHERE ?", 
+//     [{
+//       role_id: answer.roleChoice
+//     },
+//     {
+//       id: answer.whichEmp
+//     }],
+//     function (err) {
+//       if (err) throw err;
+//       console.log("Their role has been updated")
+//       hr();
+//     })
+//  })
+// }
 
 // // function updateEmployeeManager() {
 
